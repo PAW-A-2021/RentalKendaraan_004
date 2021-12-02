@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using RentalKendaraan.Models;
 
-namespace RentalKendaraan.Views
+namespace RentalKendaraan.Controllers
 {
     public class PengembaliansController : Controller
     {
@@ -19,10 +19,26 @@ namespace RentalKendaraan.Views
         }
 
         // GET: Pengembalians
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string ktsd, string searchString)
         {
-            var rentKendaraanContext = _context.Pengembalians.Include(p => p.IdKondisiNavigation).Include(p => p.IdPeminjamanNavigation);
-            return View(await rentKendaraanContext.ToListAsync());
+            var ktsdList = new List<string>();
+            var ktsdQuery = from d in _context.Pengembalians orderby d.Denda.ToString() select d.Denda.ToString();
+
+            ktsdList.AddRange(ktsdQuery.Distinct());
+            ViewBag.ktsd = new SelectList(ktsdList);
+            var menu = from m in _context.Pengembalians.Include(p => p.IdKondisiNavigation).Include(p => p.IdPeminjamanNavigation) select m;
+
+            if (!string.IsNullOrEmpty(ktsd))
+            {
+                menu = menu.Where(x => x.Denda.ToString() == ktsd);
+            }
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                menu = menu.Where(s => s.IdKondisiNavigation.NamaKondisi.Contains(searchString) || s.IdPeminjamanNavigation.TglPeminjaman.ToString().Contains(searchString) || s.TglPengembalian.ToString().Contains(searchString));
+            }
+
+            return View(await menu.ToListAsync());
         }
 
         // GET: Pengembalians/Details/5
@@ -48,7 +64,7 @@ namespace RentalKendaraan.Views
         // GET: Pengembalians/Create
         public IActionResult Create()
         {
-            ViewData["IdKondisi"] = new SelectList(_context.KondisiKendaraans, "IdKondisi", "IdKondisi");
+            ViewData["IdKondisi"] = new SelectList(_context.KondisiKendaraans, "IdKondisi", "NamaKondisi");
             ViewData["IdPeminjaman"] = new SelectList(_context.Peminjamen, "IdPeminjaman", "IdPeminjaman");
             return View();
         }
@@ -66,7 +82,7 @@ namespace RentalKendaraan.Views
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdKondisi"] = new SelectList(_context.KondisiKendaraans, "IdKondisi", "IdKondisi", pengembalian.IdKondisi);
+            ViewData["IdKondisi"] = new SelectList(_context.KondisiKendaraans, "IdKondisi", "NamaKondisi", pengembalian.IdKondisi);
             ViewData["IdPeminjaman"] = new SelectList(_context.Peminjamen, "IdPeminjaman", "IdPeminjaman", pengembalian.IdPeminjaman);
             return View(pengembalian);
         }
@@ -84,7 +100,7 @@ namespace RentalKendaraan.Views
             {
                 return NotFound();
             }
-            ViewData["IdKondisi"] = new SelectList(_context.KondisiKendaraans, "IdKondisi", "IdKondisi", pengembalian.IdKondisi);
+            ViewData["IdKondisi"] = new SelectList(_context.KondisiKendaraans, "IdKondisi", "NamaKondisi", pengembalian.IdKondisi);
             ViewData["IdPeminjaman"] = new SelectList(_context.Peminjamen, "IdPeminjaman", "IdPeminjaman", pengembalian.IdPeminjaman);
             return View(pengembalian);
         }
@@ -121,7 +137,7 @@ namespace RentalKendaraan.Views
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["IdKondisi"] = new SelectList(_context.KondisiKendaraans, "IdKondisi", "IdKondisi", pengembalian.IdKondisi);
+            ViewData["IdKondisi"] = new SelectList(_context.KondisiKendaraans, "IdKondisi", "NamaKondisi", pengembalian.IdKondisi);
             ViewData["IdPeminjaman"] = new SelectList(_context.Peminjamen, "IdPeminjaman", "IdPeminjaman", pengembalian.IdPeminjaman);
             return View(pengembalian);
         }
